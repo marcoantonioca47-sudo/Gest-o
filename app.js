@@ -69,7 +69,44 @@ contas(){
   '<div class="card" style="margin-top:16px"><div class="card-title"><div><span class="eyebrow">CONTROLE</span><h3>Filtros e pesquisa</h3></div><span class="badge">'+(payList.length+recList.length)+' títulos</span></div><div class="account-toolbar"><input class="input" placeholder="Pesquisar descrição, categoria ou cliente..." value="'+esc(state.accountsSearch||"")+'" oninput="state.accountsSearch=this.value;render()"><select class="input" onchange="state.accountsFilter=this.value;render()"><option>Todas</option><option '+(f==="Abertas"?"selected":"")+'>Abertas</option><option '+(f==="Vencidas"?"selected":"")+'>Vencidas</option><option '+(f==="Concluídas"?"selected":"")+'>Concluídas</option></select></div></div>'+
   '<div class="grid two" style="margin-top:16px"><div class="card"><div class="card-title"><div><span class="eyebrow">SAÍDAS</span><h3>Contas a pagar</h3></div><span class="badge danger">'+payList.length+'</span></div><div class="table-wrap"><table class="table"><tr><th>Conta</th><th>Vencimento</th><th>Valor</th><th>Status</th><th></th></tr>'+payList.map(x=>row(x,"pay")).join("")+'</table></div></div><div class="card"><div class="card-title"><div><span class="eyebrow">ENTRADAS</span><h3>Contas a receber</h3></div><span class="badge info">'+recList.length+'</span></div><div class="table-wrap"><table class="table"><tr><th>Conta</th><th>Vencimento</th><th>Valor</th><th>Status</th><th></th></tr>'+recList.map(x=>row(x,"rec")).join("")+'</table></div></div></div>';
 },
-metas(){const revenue=db.sales.reduce((s,x)=>s+x.total,0),goal=db.goals[0]?.value||5000,pct=Math.min(100,goal?revenue/goal*100:0);return pageHead("Metas","Defina objetivos comerciais e acompanhe a evolução",`<button class="btn primary" onclick="openGoal()">+ Definir meta</button>`)+`<div class="card goal-card"><span class="eyebrow">META DE FATURAMENTO</span><div class="goal-head"><div><strong>${money(revenue)}</strong><small>realizado</small></div><div><b>${money(goal)}</b><small>objetivo</small></div></div><div class="bar large"><i style="width:${pct}%"></i></div><div class="goal-foot"><span>${pct.toFixed(0)}% concluído</span><span>Falta ${money(Math.max(0,goal-revenue))}</span></div></div><div class="grid three" style="margin-top:18px">${db.goals.map(g=>`<div class="card"><span class="eyebrow">OBJETIVO</span><h3>${esc(g.name)}</h3><strong style="font-size:24px">${money(g.value)}</strong><p class="muted">Meta definida em ${g.date}</p></div>`).join("")||"<div class='card empty'>Cadastre sua primeira meta comercial.</div>"}</div>`},
+metas(){
+  const goals=db.goals||[], now=today();
+  const typeLabel={faturamento:"Faturamento",vendas:"Quantidade de vendas",lucro:"Lucro",produto:"Quantidade de produto"};
+  const calcGoal=g=>{
+    const start=g.startDate||"1900-01-01", end=g.endDate||"2999-12-31";
+    const sales=(db.sales||[]).filter(s=>String(s.date||"").slice(0,10)>=start&&String(s.date||"").slice(0,10)<=end);
+    if(g.type==="vendas") return sales.length;
+    if(g.type==="lucro"){
+      const rev=sales.reduce((a,s)=>a+Number(s.total||0),0);
+      const exp=(db.expenses||[]).filter(e=>String(e.date||"").slice(0,10)>=start&&String(e.date||"").slice(0,10)<=end).reduce((a,e)=>a+Number(e.value||0),0);
+      const pur=(db.purchases||[]).filter(p=>String(p.date||"").slice(0,10)>=start&&String(p.date||"").slice(0,10)<=end).reduce((a,p)=>a+Number(p.total||0),0);
+      return rev-exp-pur;
+    }
+    if(g.type==="produto") return sales.reduce((a,s)=>a+(s.items||[]).filter(i=>String(i.productId)===String(g.productId)).reduce((q,i)=>q+Number(i.qty||0),0),0);
+    return sales.reduce((a,s)=>a+Number(s.total||0),0);
+  };
+  const status=g=>{
+    const end=g.endDate||"2999-12-31", start=g.startDate||"1900-01-01", actual=calcGoal(g), target=Number(g.target||g.value||0);
+    if(actual>=target&&target>0) return ["Concluída","success"];
+    if(end<now) return ["Encerrada","danger"];
+    if(start>now) return ["Programada","info"];
+    return ["Em andamento","warning"];
+  };
+  const progress=(g)=>{
+    const target=Number(g.target||g.value||0), actual=calcGoal(g);
+    return target>0?Math.max(0,Math.min(100,(actual/target)*100)):0;
+  };
+  const active=goals.filter(g=>status(g)[0]==="Em andamento").length, done=goals.filter(g=>status(g)[0]==="Concluída").length;
+  const totalTarget=goals.reduce((a,g)=>a+Number(g.target||g.value||0),0);
+  return pageHead("Metas","Defina objetivos comerciais e acompanhe o resultado por período.",'<button class="btn primary" onclick="openGoal()">+ Nova meta</button>')+
+  '<div class="grid stats">'+stat("Metas ativas",active,"◎")+stat("Concluídas",done,"✓")+stat("Objetivos",goals.length,"#")+stat("Valor dos objetivos",money(totalTarget),"R$")+'</div>'+
+  '<div class="card goal-overview"><div><span class="eyebrow">ACOMPANHAMENTO</span><h3>Suas metas em um só lugar</h3><p class="muted">O progresso é calculado automaticamente a partir das vendas, despesas e produtos registrados.</p></div><div class="goal-overview-badge">Atualizado hoje</div></div>'+
+  '<div class="goal-list">'+(goals.map(g=>{
+    const actual=calcGoal(g), target=Number(g.target||g.value||0), pct=progress(g), st=status(g), type=typeLabel[g.type]||"Faturamento";
+    const actualText=g.type==="vendas"||g.type==="produto"?String(actual)+" un.":money(actual), targetText=g.type==="vendas"||g.type==="produto"?String(target)+" un.":money(target);
+    return '<div class="card goal-card-pro"><div class="goal-card-top"><div><span class="eyebrow">'+esc(type)+'</span><h3>'+esc(g.name||"Meta sem nome")+'</h3><small class="muted">'+esc(g.startDate||"—")+' até '+esc(g.endDate||"—")+'</small></div><span class="badge '+st[1]+'">'+st[0]+'</span></div><div class="goal-values"><div><small>Realizado</small><strong>'+actualText+'</strong></div><div><small>Objetivo</small><strong>'+targetText+'</strong></div><div><small>Progresso</small><strong>'+pct.toFixed(0)+'%</strong></div></div><div class="bar large"><i style="width:'+pct+'%"></i></div><div class="goal-foot"><span>'+((target>actual)?'Falta '+(g.type==="vendas"||g.type==="produto"?Math.max(0,target-actual)+" un.":money(target-actual)):(actual>=target&&target>0?"Objetivo alcançado":"Defina um objetivo válido"))+'</span><div class="actions"><button class="btn" onclick="openGoal('+g.id+')">Editar</button><button class="btn danger-btn" onclick="deleteGoal('+g.id+')">Excluir</button></div></div></div>';
+  }).join("")||'<div class="card empty">Nenhuma meta cadastrada. Crie sua primeira meta para começar a acompanhar o desempenho.</div>')+'</div>';
+}
 
 orcamentos(){
   const quotes=db.quotes||[],q=String(state.quoteSearch||"").toLowerCase(),f=state.quoteFilter||"Todos";
@@ -172,7 +209,21 @@ function openQuote(id){
   setTimeout(redrawQuoteItems,50);
   state.modalSave=()=>{const sub=quoteItemsTotal(items),disc=Math.min(sub,Math.max(0,Number(qdisc.value||0))),total=Math.max(0,sub-disc),obj={id:id||Date.now(),customer:qcustomer.value||"Consumidor final",items,subtotal:sub,discount:disc,discountType:"R$",total,status:base.status||"Aberto",date:base.date||today(),validUntil:qvalid.value,notes:qnotes.value.trim()};if(!items.length)return toast("Adicione pelo menos um produto.");if(q.validUntil&&q.validUntil<today()&&base.status==="Aprovado")return toast("Orçamento vencido.");if(id)Object.assign(q,obj);else db.quotes.push(obj);save();closeModal();toast(id?"Orçamento atualizado.":"Orçamento criado.");render()}
 }
-function openGoal(){formModal("Nova meta",`<div class="form-grid"><div class="field"><label>Nome da meta</label><input id="gn" value="Meta de faturamento"></div><div class="field"><label>Valor objetivo</label><input id="gv" type="number" step=".01" value="5000"></div></div>`);state.modalSave=()=>{db.goals.push({id:Date.now(),name:gn.value,value:Number(gv.value),date:today()});save();closeModal();toast("Meta criada.")}}
+function openGoal(id){
+  const g=(db.goals||[]).find(x=>x.id===id)||{id:null,name:"",type:"faturamento",target:5000,startDate:today(),endDate:today(),productId:"",notes:""};
+  const products=(db.products||[]).map(p=>'<option value="'+p.id+'" '+(String(p.id)===String(g.productId||"")?"selected":"")+'>'+esc(p.name)+'</option>').join("");
+  formModal(id?"Editar meta":"Nova meta",`<div class="form-grid"><div class="field"><label>Nome da meta</label><input id="gn" value="${esc(g.name||"")}"></div><div class="field"><label>Tipo</label><select id="gt" onchange="document.getElementById('goalProductField').style.display=this.value==='produto'?'block':'none'"><option value="faturamento" ${g.type==="faturamento"?"selected":""}>Faturamento</option><option value="vendas" ${g.type==="vendas"?"selected":""}>Quantidade de vendas</option><option value="lucro" ${g.type==="lucro"?"selected":""}>Lucro</option><option value="produto" ${g.type==="produto"?"selected":""}>Quantidade de produto</option></select></div><div class="field"><label>Objetivo</label><input id="gv" type="number" min="0" step=".01" value="${Number(g.target||g.value||0)}"></div><div class="field" id="goalProductField" style="display:${g.type==="produto"?"block":"none"}"><label>Produto</label><select id="gp"><option value="">Selecione</option>${products}</select></div><div class="field"><label>Início</label><input id="gs" type="date" value="${g.startDate||today()}"></div><div class="field"><label>Fim</label><input id="ge" type="date" value="${g.endDate||today()}"></div><div class="field full"><label>Observações</label><textarea id="go" rows="3">${esc(g.notes||"")}</textarea></div></div>`);
+  state.modalSave=()=>{
+    const target=Number(gv.value||0);
+    if(!gn.value.trim()){toast("Informe o nome da meta.");return}
+    if(target<=0){toast("Informe um objetivo maior que zero.");return}
+    if(gs.value&&ge.value&&gs.value>ge.value){toast("A data final não pode ser anterior à inicial.");return}
+    const data={id:id||Date.now(),name:gn.value.trim(),type:gt.value,target,startDate:gs.value,endDate:ge.value,productId:gp?gp.value:"",notes:go.value};
+    if(id){const i=db.goals.findIndex(x=>x.id===id);if(i>=0)db.goals[i]=data}else db.goals.push(data);
+    save();closeModal();toast(id?"Meta atualizada.":"Meta criada.");
+  };
+}
+function deleteGoal(id){if(!confirm("Excluir esta meta?"))return;db.goals=(db.goals||[]).filter(x=>x.id!==id);save();toast("Meta excluída.");}
 function openSupplier(){formModal("Novo fornecedor",`<div class="form-grid"><div class="field"><label>Fornecedor</label><input id="sn"></div><div class="field"><label>E-mail</label><input id="se"></div><div class="field"><label>Telefone</label><input id="st"></div></div>`);state.modalSave=()=>{db.suppliers.push({id:Date.now(),name:sn.value,email:se.value,phone:st.value});save();closeModal();toast("Fornecedor cadastrado.")}}
 function openExpense(){formModal("Nova despesa",`<div class="form-grid"><div class="field"><label>Descrição</label><input id="ed"></div><div class="field"><label>Categoria</label><input id="ec"></div><div class="field"><label>Valor</label><input id="ev" type="number" step=".01"></div><div class="field"><label>Data</label><input id="et" type="date" value="${today()}"></div></div>`);state.modalSave=()=>{db.expenses.push({id:Date.now(),description:ed.value,category:ec.value,value:Number(ev.value),date:et.value,status:"Pago"});save();closeModal();toast("Despesa registrada.")}}
 function openUser(){formModal("Novo usuário",`<div class="form-grid"><div class="field"><label>Nome</label><input id="un"></div><div class="field"><label>E-mail</label><input id="ue" type="email"></div><div class="field"><label>Senha inicial</label><input id="up" type="password" value="123456"></div><div class="field"><label>Perfil</label><select id="ur"><option>Administrador</option><option>Gerente</option><option>Vendedor</option><option>Caixa</option><option>Estoque</option></select></div></div>`);state.modalSave=()=>{db.users.push({id:Date.now(),name:un.value,email:ue.value,password:up.value||"123456",role:ur.value,status:"Ativo"});save();closeModal();toast("Usuário cadastrado.")}}
