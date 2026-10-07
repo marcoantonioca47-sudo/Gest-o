@@ -146,3 +146,6 @@ body{background:linear-gradient(180deg,#f7f8fb 0,#f3f5f9 100%);font-size:14px}
 
 /* Contas profissional */
 .account-toolbar{display:grid;grid-template-columns:1fr 180px;gap:10px;margin-top:14px}.account-toolbar .input{min-width:0}.table td small{display:block;color:var(--muted);font-size:9px;margin-top:3px}@media(max-width:760px){.account-toolbar{grid-template-columns:1fr}.grid.two{grid-template-columns:1fr}}
+
+/* Orçamentos profissional */
+.quote-item{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}.quote-item small{display:block;color:var(--muted);margin-top:3px}.quote-total{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}.quote-total strong{font-size:22px}.quote-total span:nth-of-type(2){font-weight:800}.quote-total b,.quote-total strong{justify-self:end}@media(max-width:760px){.quote-item{grid-template-columns:1fr auto}.quote-item .btn{grid-column:2;grid-row:1}}
