@@ -106,7 +106,7 @@ metas(){
     const actualText=g.type==="vendas"||g.type==="produto"?String(actual)+" un.":money(actual), targetText=g.type==="vendas"||g.type==="produto"?String(target)+" un.":money(target);
     return '<div class="card goal-card-pro"><div class="goal-card-top"><div><span class="eyebrow">'+esc(type)+'</span><h3>'+esc(g.name||"Meta sem nome")+'</h3><small class="muted">'+esc(g.startDate||"—")+' até '+esc(g.endDate||"—")+'</small></div><span class="badge '+st[1]+'">'+st[0]+'</span></div><div class="goal-values"><div><small>Realizado</small><strong>'+actualText+'</strong></div><div><small>Objetivo</small><strong>'+targetText+'</strong></div><div><small>Progresso</small><strong>'+pct.toFixed(0)+'%</strong></div></div><div class="bar large"><i style="width:'+pct+'%"></i></div><div class="goal-foot"><span>'+((target>actual)?'Falta '+(g.type==="vendas"||g.type==="produto"?Math.max(0,target-actual)+" un.":money(target-actual)):(actual>=target&&target>0?"Objetivo alcançado":"Defina um objetivo válido"))+'</span><div class="actions"><button class="btn" onclick="openGoal('+g.id+')">Editar</button><button class="btn danger-btn" onclick="deleteGoal('+g.id+')">Excluir</button></div></div></div>';
   }).join("")||'<div class="card empty">Nenhuma meta cadastrada. Crie sua primeira meta para começar a acompanhar o desempenho.</div>')+'</div>';
-}
+},
 
 orcamentos(){
   const quotes=db.quotes||[],q=String(state.quoteSearch||"").toLowerCase(),f=state.quoteFilter||"Todos";
