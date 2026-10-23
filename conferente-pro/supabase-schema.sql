@@ -75,3 +75,9 @@ update public.cp_tasks set status = case status
 end;
 alter table public.cp_tasks add constraint cp_tasks_status_check
   check (status in ('Aguardando','Iniciado','Finalizado','Expedido'));
+
+
+-- Função de cada integrante da equipe.
+alter table public.cp_operators add column if not exists role text not null default 'Operador';
+alter table public.cp_operators drop constraint if exists cp_operators_role_check;
+alter table public.cp_operators add constraint cp_operators_role_check check (role in ('Operador','Conferente'));
