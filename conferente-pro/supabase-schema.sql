@@ -61,3 +61,17 @@ for all to authenticated using (true) with check (true);
 grant select, insert, update, delete on public.cp_operators to authenticated;
 grant select, insert, update, delete on public.cp_tasks to authenticated;
 grant select, insert, update, delete on public.cp_history to authenticated;
+
+
+-- Atualização do fluxo de etapas: execute também em bancos já existentes.
+alter table public.cp_tasks drop constraint if exists cp_tasks_status_check;
+alter table public.cp_tasks alter column status set default 'Aguardando';
+update public.cp_tasks set status = case status
+  when 'A fazer' then 'Aguardando'
+  when 'Em andamento' then 'Iniciado'
+  when 'Concluído' then 'Finalizado'
+  when 'Cancelado' then 'Aguardando'
+  else status
+end;
+alter table public.cp_tasks add constraint cp_tasks_status_check
+  check (status in ('Aguardando','Iniciado','Finalizado','Expedido'));
