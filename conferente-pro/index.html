@@ -118,6 +118,54 @@
  .calendar{min-width:630px}
 }
 
+
+/* CONFERENTE PRO — acabamento visual e leitura rápida */
+:root{--navy:#10243a;--blue:#246fe5;--bg:#f2f5fa;--ink:#16263a;--muted:#64758a;--line:#dfe7f0}
+body{background:radial-gradient(ellipse at 10% 0%,#e8f1ff 0,transparent 35%),var(--bg);line-height:1.45}
+.top{padding:17px clamp(14px,3vw,30px);background:linear-gradient(115deg,#0d2035 0%,#163b5b 58%,#205783 100%);box-shadow:0 8px 24px rgba(16,36,58,.14)}
+.brand{min-width:0}.brand h1{letter-spacing:.045em;font-weight:850}.brand p{line-height:1.4}
+.layout{gap:0}aside{padding:22px 13px;background:rgba(255,255,255,.94);box-shadow:5px 0 20px rgba(16,36,58,.025)}
+.nav{gap:7px}.nav button{display:flex;align-items:center;gap:9px;min-height:44px;padding:12px 13px;border:1px solid transparent}.nav button.active{border-color:#d4e5ff;background:linear-gradient(100deg,#e8f1ff,#f5f9ff);box-shadow:inset 3px 0 0 var(--blue)}
+.main{padding-top:28px}.head{align-items:center;margin-bottom:22px}.head h2{letter-spacing:-.035em;font-weight:850}.head p{font-size:14px;line-height:1.5}
+.stat,.panel,.op,.auth{border-color:#e0e8f1;background:rgba(255,255,255,.97)}
+.stat{position:relative;overflow:hidden;padding:19px}.stat:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#b8cce5}.stat:nth-child(1):before{background:#2878e8}.stat:nth-child(2):before{background:#14865c}.stat:nth-child(3):before{background:#d9911a}.stat:nth-child(4):before{background:#7b61c9}
+.label{text-transform:uppercase;letter-spacing:.055em;font-size:11px}.value{letter-spacing:-.04em;line-height:1.1}
+.panel{padding:19px}.panelhead h3{font-size:17px;letter-spacing:-.015em}
+.btn{border-radius:11px;min-height:42px;padding:10px 15px;font-weight:750;border-color:#dbe4ee;background:linear-gradient(180deg,#fff,#f8fafc)}
+.btn.primary{background:linear-gradient(135deg,#2e83f5,#1e62cc);border-color:#236bd7}
+input,select,textarea{transition:border-color .15s,box-shadow .15s}
+.search:focus,.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#6ca4f5;box-shadow:0 0 0 3px rgba(40,120,232,.13)}
+.pill{letter-spacing:.01em}
+.empty{border:1px dashed #d7e1ed;border-radius:12px;background:#fafcff}
+.typecard{min-height:136px}.typecard strong{font-size:16px}.typecard small{font-size:13px;line-height:1.45}
+.modalback{backdrop-filter:blur(4px)}.modal{border:1px solid #e1e9f2;box-shadow:0 24px 70px rgba(4,20,39,.28)}
+.toast{box-shadow:0 8px 26px rgba(10,25,43,.25);padding:13px 17px}
+.mobile{box-shadow:0 -8px 24px rgba(16,36,58,.08);border-color:#e0e8f1}
+@media(max-width:700px){
+ body{background:#f2f5fa}
+ .top{padding:12px 14px}
+ .main{padding-top:18px}
+ .head{margin-bottom:17px}
+ .head p{font-size:13px}
+ .stat{padding:13px 12px 14px}
+ .label{font-size:10px;line-height:1.4}
+ .value{font-size:clamp(22px,6vw,28px);margin:9px 0 5px}
+ .panel{padding:13px}
+ .panelhead{align-items:flex-start}
+ .typecards{gap:13px}
+ .typecard{min-height:102px;padding:15px;gap:12px}
+ .typecard strong{font-size:15px}
+ .typecard small{font-size:12px}
+ .btn{min-height:44px}
+ .mobile button{min-height:46px;font-size:10px;line-height:1.25}
+ .modal{border-radius:18px}
+}
+@media(min-width:901px){
+ .layout{grid-template-columns:235px minmax(0,1fr)}
+ .main{padding-left:clamp(24px,3vw,42px);padding-right:clamp(24px,3vw,42px)}
+ .stats{gap:15px}
+}
+
 </style></head><body>
 <header class="top"><div class="brand"><div class="logo">▦</div><div><h1>CONFERENTE PRO</h1><p>Planejamento e controle do CD</p></div></div><div><button id="settings" class="btn small">⚙ Conexão</button><button id="logout" class="btn small hidden">Sair</button></div></header>
 <div id="auth"></div><div id="app" class="hidden"><div class="layout"><aside><nav class="nav"><button data-page="dashboard" class="active">▦　Painel geral</button><button data-page="tasks">☷　Tarefas</button><button data-page="calendar">▦　Cronograma</button><button data-page="operators">♙　Operadores</button><button data-page="history">↺　Histórico</button></nav><p class="muted" style="padding:10px">Um CD · Uma operação</p></aside><main id="main" class="main"></main></div><nav class="mobile"><button data-page="dashboard">▦<br>Painel</button><button data-page="tasks">☷<br>Tarefas</button><button data-page="calendar">▦<br>Agenda</button><button data-page="operators">♙<br>Equipe</button><button data-page="history">↺<br>Histórico</button></nav></div><div id="modal"></div><div id="toast"></div>
